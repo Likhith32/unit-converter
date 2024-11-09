@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unit Converter</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(45deg, #ff6f61, #6a5acd, #20b2aa); /* Gradient Colors */
+            background-size: 300% 300%;
+            animation: gradientBackground 10s ease infinite;
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            flex-direction: column;
+        }
+
+        .container {
+            background-color: rgba(0, 0, 0, 0.7);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+            width: 320px;
+            text-align: center;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+            font-size: 2rem;
+        }
+
+        label, select, input, button {
+            padding: 10px;
+            margin: 10px 0;
+            width: 100%;
+            font-size: 1rem;
+            border-radius: 5px;
+            border: none;
+        }
+
+        select {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        input {
+            background-color: #f0f0f0;
+            color: #333;
+        }
+
+        button {
+            background-color: #3498db;
+            color: white;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #2980b9;
+        }
+
+        button:active {
+            background-color: #1d6fa5;
+        }
+
+        #result {
+            font-size: 1.2rem;
+            margin-top: 10px;
+            padding: 10px;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 5px;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        #error {
+            color: #ff5733;
+            font-size: 1rem;
+        }
+
+        @keyframes gradientBackground {
+            0% {
+                background-position: 0% 50%;
+            }
+            50% {
+                background-position: 100% 50%;
+            }
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Unit Converter</h1>
+
+    <label for="unitType">Choose a Unit Type:</label>
+    <select id="unitType">
+        <option value="length">Length</option>
+        <option value="weight">Weight</option>
+        <option value="temperature">Temperature</option>
+    </select>
+
+    <label for="fromUnit">From Unit:</label>
+    <select id="fromUnit"></select>
+
+    <label for="toUnit">To Unit:</label>
+    <select id="toUnit"></select>
+
+    <input type="number" id="inputValue" placeholder="Enter value" />
+
+    <button onclick="convert()">Convert</button>
+    <button onclick="clearFields()">Clear</button>
+
+    <div id="error"></div>
+    <div id="result"></div>
+</div>
+
+<script>
+    const units = {
+        length: {
+            "meters": 1,
+            "kilometers": 0.001,
+            "centimeters": 100,
+            "millimeters": 1000,
+            "inches": 39.3701,
+            "feet": 3.28084,
+            "yards": 1.09361
+        },
+        weight: {
+            "grams": 1,
+            "kilograms": 0.001,
+            "milligrams": 1000,
+            "pounds": 0.00220462,
+            "ounces": 0.035274
+        },
+        temperature: {
+            "celsius": (temp) => temp,
+            "fahrenheit": (temp) => (temp * 9/5) + 32,
+            "kelvin": (temp) => temp + 273.15
+        }
+    };
+
+    const unitTypeSelect = document.getElementById("unitType");
+    const fromUnitSelect = document.getElementById("fromUnit");
+    const toUnitSelect = document.getElementById("toUnit");
+    const inputValue = document.getElementById("inputValue");
+    const resultDisplay = document.getElementById("result");
+    const errorDisplay = document.getElementById("error");
+
+    unitTypeSelect.addEventListener("change", updateUnits);
+    updateUnits();
+
+    function updateUnits() {
+        const unitType = unitTypeSelect.value;
+        const unitList = units[unitType];
+        fromUnitSelect.innerHTML = '';
+        toUnitSelect.innerHTML = '';
+        
+        for (const unit in unitList) {
+            const option = document.createElement("option");
+            option.value = unit;
+            option.textContent = unit.charAt(0).toUpperCase() + unit.slice(1);
+            fromUnitSelect.appendChild(option);
+
+            const option2 = document.createElement("option");
+            option2.value = unit;
+            option2.textContent = unit.charAt(0).toUpperCase() + unit.slice(1);
+            toUnitSelect.appendChild(option2);
+        }
+    }
+
+    function convert() {
+        const unitType = unitTypeSelect.value;
+        const fromUnit = fromUnitSelect.value;
+        const toUnit = toUnitSelect.value;
+        const input = parseFloat(inputValue.value);
+
+        // Check if input is valid
+        if (isNaN(input) || input <= 0) {
+            errorDisplay.textContent = "Please enter a valid positive number.";
+            resultDisplay.style.opacity = 0;
+            return;
+        } else {
+            errorDisplay.textContent = "";
+        }
+
+        let result;
+        if (unitType === "temperature") {
+            result = convertTemperature(fromUnit, toUnit, input);
+        } else {
+            result = input * units[unitType][fromUnit] / units[unitType][toUnit];
+        }
+
+        resultDisplay.textContent = `Result: ${result} ${toUnit.charAt(0).toUpperCase() + toUnit.slice(1)}`;
+        resultDisplay.style.opacity = 1; // Make the result fade in
+    }
+
+    function convertTemperature(from, to, value) {
+        if (from === "celsius") {
+            if (to === "fahrenheit") return (value * 9/5) + 32;
+            if (to === "kelvin") return value + 273.15;
+        } else if (from === "fahrenheit") {
+            if (to === "celsius") return (value - 32) * 5/9;
+            if (to === "kelvin") return ((value - 32) * 5/9) + 273.15;
+        } else if (from === "kelvin") {
+            if (to === "celsius") return value - 273.15;
+            if (to === "fahrenheit") return ((value - 273.15) * 9/5) + 32;
+        }
+    }
+
+    function clearFields() {
+        inputValue.value = '';
+        resultDisplay.style.opacity = 0;
+        errorDisplay.textContent = '';
+        unitTypeSelect.value = 'length';
+        updateUnits();
+    }
+</script>
+
+</body>
+</html>
